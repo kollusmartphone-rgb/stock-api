@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Stock Dashboard</title>
+</head>
+<body>
+
+<h2>🚀 Live Stock Analyzer</h2>
+
+<input id="stock" placeholder="RELIANCE.NS">
+<button onclick="run()">Analyze</button>
+
+<div id="result"></div>
+
+<script>
+async function run() {
+  let symbol = document.getElementById("stock").value;
+
+  let res = await fetch("/api/stock?symbol=" + symbol);
+  let data = await res.json();
+
+  if (data.error) {
+    document.getElementById("result").innerHTML = data.error;
+    return;
+  }
+
+  document.getElementById("result").innerHTML =
+    "Price: ₹" + data.price + "<br>" +
+    "Change: " + data.change + "%<br>" +
+    "Decision: " + data.decision;
+}
+</script>
+
+</body>
+</html>
