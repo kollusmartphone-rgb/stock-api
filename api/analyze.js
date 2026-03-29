@@ -20,21 +20,28 @@ export default async function handler(req, res) {
     const change = ((price - prevClose) / prevClose) * 100;
     const volume = result.meta.regularMarketVolume || 0;
 
-       // ===== FUNDAMENTALS MULTI-SOURCE =====
-    let pe = null, roe = null, debt = null;
-    
-    // ---- TRY FMP ----
-    try {
-      const fmpRes = await fetch(
-        `https://financialmodelingprep.com/api/v3/profile/${symbol.replace(".NS","")}?apikey=demo`
-      );
-      const fmpData = await fmpRes.json();
-      const f = fmpData?.[0];
-    
-      if (f && f.pe) {
-        pe = f.pe;
-      }
-    } catch {}
+    // ===== FUNDAMENTALS FROM FMP (CORRECT ENDPOINT) =====
+let pe = null, roe = null, debt = null;
+
+try {
+  const cleanSymbol = symbol.replace(".NS", "");
+
+  const fmpRes = await fetch(
+    `https://financialmodelingprep.com/api/v3/ratios/${cleanSymbol}?apikey=demo`
+  );
+
+  const fmpData = await fmpRes.json();
+  const f = fmpData?.[0];
+
+  if (f) {
+    pe = f.priceEarningsRatio || null;
+    roe = f.returnOnEquity || null;
+    debt = f.debtEquityRatio || null;
+  }
+
+} catch (err) {
+  console.log("FMP failed");
+}
     
      // ---- TRY SCREENER (IMPROVED PARSER) ----
 try {
