@@ -6,29 +6,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=demo`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
     const data = await response.json();
 
-    const stock = data[0];
+    const result = data?.chart?.result?.[0];
 
-    if (!stock) {
+    if (!result) {
       return res.status(404).json({ error: "Stock not found" });
     }
 
-    const price = stock.price || 0;
-    const change = stock.changesPercentage || 0;
+    const price = result.meta.regularMarketPrice || 0;
+    const prevClose = result.meta.previousClose || 0;
+
+    const change = ((price - prevClose) / prevClose) * 100;
 
     let decision = "WATCH";
-
     if (change > 1) decision = "BUY";
     else if (change < -1) decision = "AVOID";
 
     res.status(200).json({
       symbol,
       price,
-      change,
+      change: change.toFixed(2),
       decision
     });
 
