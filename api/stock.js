@@ -28,16 +28,39 @@ export default async function handler(req, res) {
     const change = ((price - prevClose) / prevClose) * 100;
 
     let decision = "WATCH";
-    if (change > 1) decision = "BUY";
-    else if (change < -1) decision = "AVOID";
+    let reason = "";
+    
+    // Strong momentum up
+    if (change > 2) {
+      decision = "BUY";
+      reason = "Strong upward momentum 🚀";
+    }
+    
+    // Mild uptrend
+    else if (change > 0.5) {
+      decision = "WATCH";
+      reason = "Positive trend, wait for dip";
+    }
+    
+    // Small dip (opportunity)
+    else if (change > -2) {
+      decision = "BUY";
+      reason = "Possible accumulation zone 📉";
+    }
+    
+    // Heavy fall (risky)
+    else {
+      decision = "AVOID";
+      reason = "Heavy selling pressure ⚠️";
+    }
 
-    res.status(200).json({
+      res.status(200).json({
       symbol,
       price,
       change: change.toFixed(2),
-      decision
+      decision,
+      reason
     });
-
   } catch (err) {
     res.status(500).json({
       error: "Fetch failed",
