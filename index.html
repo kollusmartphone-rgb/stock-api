@@ -1,94 +1,95 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>🚀 AI Stock Dashboard</title>
+  <title>🚀 AI Portfolio System</title>
 
   <style>
-    body {
-      font-family: Arial;
-      background: #f4f6f8;
-      padding: 20px;
-    }
-
-    h2 {
-      margin-bottom: 10px;
-    }
-
-    input, button {
-      padding: 10px;
-      margin: 5px;
-    }
-
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .card {
-      background: white;
-      padding: 15px;
-      margin-top: 10px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
+    body { font-family: Arial; background: #f4f6f8; padding: 20px; }
+    input { padding: 8px; margin: 5px; width: 120px; }
+    button { padding: 10px; margin: 5px; background: #007bff; color: white; border: none; }
+    .card { background: white; padding: 15px; margin-top: 10px; border-radius: 10px; }
     .buy { color: green; }
-    .avoid { color: red; }
-    .watch { color: orange; }
+    .sell { color: red; }
+    .hold { color: orange; }
   </style>
 </head>
 
 <body>
 
-<h2>🚀 AI Stock Dashboard</h2>
+<h2>🚀 AI Portfolio System</h2>
 
-<input id="stock" placeholder="RELIANCE.NS">
+<h3>Add Stock</h3>
+
+<input id="symbol" placeholder="RELIANCE.NS">
+<input id="pe" placeholder="PE">
+<input id="debt" placeholder="Debt">
+<input id="roe" placeholder="ROE">
+<input id="profit" placeholder="Profit">
+<input id="volume" placeholder="Volume">
+
 <button onclick="addStock()">Add</button>
 
+<h3>📊 Portfolio</h3>
 <div id="portfolio"></div>
 
 <script>
 
 let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
 
-function savePortfolio() {
+function save() {
   localStorage.setItem("portfolio", JSON.stringify(portfolio));
 }
 
-async function fetchStock(symbol) {
-  try {
-    let res = await fetch("/api/stock?symbol=" + symbol);
-    let data = await res.json();
-    return data;
-  } catch {
-    return { error: "Failed" };
-  }
+async function fetchLive(symbol) {
+  let res = await fetch("/api/stock?symbol=" + symbol);
+  return await res.json();
+}
+
+function evaluate(stock, live) {
+  let score = 0;
+  let reasons = [];
+
+  if (stock.profit > 0) { score++; reasons.push("Profitable"); }
+  if (stock.pe > 0 && stock.pe < 25) { score++; reasons.push("Good PE"); }
+  if (stock.debt < 0.5) { score++; reasons.push("Low Debt"); }
+  if (stock.roe > 15) { score++; reasons.push("Strong ROE"); }
+  if (stock.volume > 10) { score++; reasons.push("Good Volume"); }
+
+  // combine with live momentum
+  if (live.change > 1) score++;
+  if (live.change < -2) score--;
+
+  let decision = "HOLD";
+  if (score >= 5) decision = "BUY";
+  else if (score <= 2) decision = "SELL";
+
+  return { score, decision, reasons };
 }
 
 async function render() {
   let html = "";
 
-  for (let stock of portfolio) {
-    let data = await fetchStock(stock);
+  for (let s of portfolio) {
+    let live = await fetchLive(s.symbol);
 
-    if (data.error) {
-      html += `<div class="card">${stock} - Error</div>`;
-      continue;
-    }
+    let result = evaluate(s, live);
 
     let cls =
-      data.decision === "BUY" ? "buy" :
-      data.decision === "AVOID" ? "avoid" : "watch";
+      result.decision === "BUY" ? "buy" :
+      result.decision === "SELL" ? "sell" : "hold";
 
     html += `
       <div class="card">
-        <h3>${data.symbol}</h3>
-        Price: ₹${data.price}<br>
-        Change: ${data.change}%<br>
-       Decision: <span class="${cls}">${data.decision}</span><br>
-       Reason: ${data.reason}
+        <h3>${s.symbol}</h3>
+
+        Price: ₹${live.price}<br>
+        Change: ${live.change}%<br><br>
+
+        Score: ${result.score}<br>
+
+        Decision: <span class="${cls}">${result.decision}</span><br>
+
+        Reasons: ${result.reasons.join(", ")}
       </div>
     `;
   }
@@ -97,12 +98,17 @@ async function render() {
 }
 
 function addStock() {
-  let stock = document.getElementById("stock").value;
-
-  if (!stock) return;
+  let stock = {
+    symbol: document.getElementById("symbol").value,
+    pe: parseFloat(document.getElementById("pe").value),
+    debt: parseFloat(document.getElementById("debt").value),
+    roe: parseFloat(document.getElementById("roe").value),
+    profit: parseFloat(document.getElementById("profit").value),
+    volume: parseFloat(document.getElementById("volume").value)
+  };
 
   portfolio.push(stock);
-  savePortfolio();
+  save();
   render();
 }
 
