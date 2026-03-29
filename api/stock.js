@@ -8,32 +8,40 @@ export default async function handler(req, res) {
   try {
     const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json"
+      }
+    });
+
     const data = await response.json();
 
-    const stock = data.quoteResponse.result?.[0];
+    const stock = data?.quoteResponse?.result?.[0];
 
     if (!stock) {
       return res.status(404).json({ error: "Stock not found" });
     }
 
     const price = stock.regularMarketPrice || 0;
-    const pe = stock.trailingPE || 0;
+    const change = stock.regularMarketChangePercent || 0;
 
-    let score = 0;
-    if (pe > 0 && pe < 25) score++;
+    let decision = "WATCH";
 
-    const decision =
-      score >= 1 ? "BUY" : "WATCH";
+    if (change > 1) decision = "BUY";
+    else if (change < -1) decision = "AVOID";
 
     res.status(200).json({
       symbol,
       price,
-      pe,
+      change,
       decision
     });
 
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch data" });
+    res.status(500).json({
+      error: "Fetch failed",
+      details: err.message
+    });
   }
 }
