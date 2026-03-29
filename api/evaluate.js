@@ -1,10 +1,32 @@
 export default async function handler(req, res) {
-  const { price, change } = req.query;
+  const { price, change, pe, roe, debt, volume } = req.query;
 
   let score = 0;
   let reasons = [];
 
-  // Momentum
+  // ===== FUNDAMENTALS =====
+  if (pe > 0 && pe < 25) {
+    score++;
+    reasons.push("Good PE");
+  }
+
+  if (roe > 15) {
+    score++;
+    reasons.push("Strong ROE");
+  }
+
+  if (debt < 0.5) {
+    score++;
+    reasons.push("Low Debt");
+  }
+
+  // ===== VOLUME =====
+  if (volume > 1000000) {
+    score++;
+    reasons.push("High volume");
+  }
+
+  // ===== MOMENTUM =====
   if (change > 1) {
     score++;
     reasons.push("Positive momentum");
@@ -12,24 +34,14 @@ export default async function handler(req, res) {
 
   if (change < -3) {
     score--;
-    reasons.push("Heavy selling pressure");
+    reasons.push("Heavy selling");
   }
 
-  // Stability
-  if (Math.abs(change) < 2) {
-    score++;
-    reasons.push("Stable movement");
-  }
-
-  // Avoid penny
-  if (price > 50) {
-    score++;
-    reasons.push("Not a penny stock");
-  }
-
+  // ===== FINAL =====
   let decision = "HOLD";
-  if (score >= 3) decision = "BUY";
-  else if (score <= 0) decision = "AVOID";
+
+  if (score >= 5) decision = "BUY";
+  else if (score <= 2) decision = "SELL";
 
   res.status(200).json({
     score,
