@@ -20,20 +20,40 @@ export default async function handler(req, res) {
     const change = ((price - prevClose) / prevClose) * 100;
     const volume = result.meta.regularMarketVolume || 0;
 
-    // ===== 2. FUNDAMENTALS (FMP - fallback) =====
+       // ===== FUNDAMENTALS MULTI-SOURCE =====
     let pe = null, roe = null, debt = null;
-
+    
+    // ---- TRY FMP ----
     try {
       const fmpRes = await fetch(
         `https://financialmodelingprep.com/api/v3/profile/${symbol.replace(".NS","")}?apikey=demo`
       );
-
       const fmpData = await fmpRes.json();
       const f = fmpData?.[0];
-
-      if (f) {
-        pe = f.pe || null;
+    
+      if (f && f.pe) {
+        pe = f.pe;
       }
+    } catch {}
+    
+    // ---- TRY SCREENER (fallback) ----
+    try {
+      const scrRes = await fetch(
+        `https://www.screener.in/company/${symbol.replace(".NS","")}/`,
+        { headers: { "User-Agent": "Mozilla/5.0" } }
+      );
+    
+      const html = await scrRes.text();
+    
+      const extract = (label) => {
+        const regex = new RegExp(label + `.*?<span.*?>(.*?)</span>`, "i");
+        const match = html.match(regex);
+        return match ? parseFloat(match[1].replace(/,/g, "")) : null;
+      };
+    
+      roe = extract("ROE");
+      debt = extract("Debt to equity");
+    
     } catch {}
 
     // ===== 3. RULE ENGINE =====
