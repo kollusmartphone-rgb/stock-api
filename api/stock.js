@@ -6,25 +6,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`;
+    const url = `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=demo`;
 
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json"
-      }
-    });
-
+    const response = await fetch(url);
     const data = await response.json();
 
-    const stock = data?.quoteResponse?.result?.[0];
+    const stock = data[0];
 
     if (!stock) {
       return res.status(404).json({ error: "Stock not found" });
     }
 
-    const price = stock.regularMarketPrice || 0;
-    const change = stock.regularMarketChangePercent || 0;
+    const price = stock.price || 0;
+    const change = stock.changesPercentage || 0;
 
     let decision = "WATCH";
 
