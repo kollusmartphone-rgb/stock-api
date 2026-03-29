@@ -1,35 +1,112 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Stock Dashboard</title>
-</head>
-<body>
-  
+  <title>🚀 AI Stock Dashboard</title>
 
-<h2>🚀 Live Stock Analyzer</h2>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .buy { color: green; }
+    .avoid { color: red; }
+    .watch { color: orange; }
+  </style>
+</head>
+
+<body>
+
+<h2>🚀 AI Stock Dashboard</h2>
 
 <input id="stock" placeholder="RELIANCE.NS">
-<button onclick="run()">Analyze</button>
+<button onclick="addStock()">Add</button>
 
-<div id="result"></div>
+<div id="portfolio"></div>
 
 <script>
-async function run() {
-  let symbol = document.getElementById("stock").value;
 
-  let res = await fetch("/api/stock?symbol=" + symbol);
-  let data = await res.json();
+let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
 
-  if (data.error) {
-    document.getElementById("result").innerHTML = data.error;
-    return;
+function savePortfolio() {
+  localStorage.setItem("portfolio", JSON.stringify(portfolio));
+}
+
+async function fetchStock(symbol) {
+  try {
+    let res = await fetch("/api/stock?symbol=" + symbol);
+    let data = await res.json();
+    return data;
+  } catch {
+    return { error: "Failed" };
+  }
+}
+
+async function render() {
+  let html = "";
+
+  for (let stock of portfolio) {
+    let data = await fetchStock(stock);
+
+    if (data.error) {
+      html += `<div class="card">${stock} - Error</div>`;
+      continue;
+    }
+
+    let cls =
+      data.decision === "BUY" ? "buy" :
+      data.decision === "AVOID" ? "avoid" : "watch";
+
+    html += `
+      <div class="card">
+        <h3>${data.symbol}</h3>
+        Price: ₹${data.price}<br>
+        Change: ${data.change}%<br>
+        Decision: <span class="${cls}">${data.decision}</span>
+      </div>
+    `;
   }
 
-  document.getElementById("result").innerHTML =
-    "Price: ₹" + data.price + "<br>" +
-    "Change: " + data.change + "%<br>" +
-    "Decision: " + data.decision;
+  document.getElementById("portfolio").innerHTML = html;
 }
+
+function addStock() {
+  let stock = document.getElementById("stock").value;
+
+  if (!stock) return;
+
+  portfolio.push(stock);
+  savePortfolio();
+  render();
+}
+
+render();
+
 </script>
 
 </body>
