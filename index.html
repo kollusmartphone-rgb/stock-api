@@ -17,30 +17,33 @@
 async function run() {
   let symbol = document.getElementById("symbol").value;
 
-  let stock = await fetch("/api/stock?symbol=" + symbol)
-    .then(r => r.json());
+  try {
+    let data = await fetch("/api/analyze?symbol=" + symbol)
+      .then(r => r.json());
 
-  let fundamentals = await fetch("/api/fundamentals?symbol=" + symbol)
-    .then(r => r.json());
+    if (data.error) {
+      document.getElementById("result").innerHTML = data.error;
+      return;
+    }
 
-  let evalRes = await fetch(
-    `/api/evaluate?price=${stock.price}&change=${stock.change}&pe=${fundamentals.pe}&roe=${fundamentals.roe}&debt=${fundamentals.debt}&volume=${stock.volume}`
-  ).then(r => r.json());
+    document.getElementById("result").innerHTML = `
+      <h3>${data.symbol}</h3>
 
-  document.getElementById("result").innerHTML = `
-    <h3>${symbol}</h3>
+      Price: ₹${data.price}<br>
+      Change: ${data.change}%<br>
+      Volume: ${data.volume}<br><br>
 
-    Price: ₹${stock.price}<br>
-    Change: ${stock.change.toFixed(2)}%<br><br>
+      PE: ${data.pe ?? "N/A"}<br><br>
 
-    PE: ${fundamentals.pe}<br>
-    ROE: ${fundamentals.roe}<br>
-    Debt: ${fundamentals.debt}<br><br>
+      Decision: <b>${data.decision}</b><br>
+      Score: ${data.score}<br>
+      Confidence: ${data.confidence}<br><br>
 
-    Decision: <b>${evalRes.decision}</b><br>
-    Score: ${evalRes.score}<br>
-    Reasons: ${evalRes.reasons.join(", ")}
-  `;
+      Reasons: ${data.reasons.join(", ")}
+    `;
+  } catch (err) {
+    document.getElementById("result").innerHTML = "Error fetching data";
+  }
 }
 </script>
 
