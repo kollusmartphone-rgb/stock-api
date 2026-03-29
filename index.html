@@ -17,15 +17,25 @@
 async function run() {
   let symbol = document.getElementById("symbol").value;
 
-  let stock = await fetch("/api/stock?symbol=" + symbol).then(r => r.json());
-
-  let evalRes = await fetch(`/api/evaluate?price=${stock.price}&change=${stock.change}`)
+  let stock = await fetch("/api/stock?symbol=" + symbol)
     .then(r => r.json());
+
+  let fundamentals = await fetch("/api/fundamentals?symbol=" + symbol)
+    .then(r => r.json());
+
+  let evalRes = await fetch(
+    `/api/evaluate?price=${stock.price}&change=${stock.change}&pe=${fundamentals.pe}&roe=${fundamentals.roe}&debt=${fundamentals.debt}&volume=${stock.volume}`
+  ).then(r => r.json());
 
   document.getElementById("result").innerHTML = `
     <h3>${symbol}</h3>
+
     Price: ₹${stock.price}<br>
     Change: ${stock.change.toFixed(2)}%<br><br>
+
+    PE: ${fundamentals.pe}<br>
+    ROE: ${fundamentals.roe}<br>
+    Debt: ${fundamentals.debt}<br><br>
 
     Decision: <b>${evalRes.decision}</b><br>
     Score: ${evalRes.score}<br>
