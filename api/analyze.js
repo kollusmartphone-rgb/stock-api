@@ -36,25 +36,35 @@ export default async function handler(req, res) {
       }
     } catch {}
     
-    // ---- TRY SCREENER (fallback) ----
-    try {
-      const scrRes = await fetch(
-        `https://www.screener.in/company/${symbol.replace(".NS","")}/`,
-        { headers: { "User-Agent": "Mozilla/5.0" } }
-      );
-    
-      const html = await scrRes.text();
-    
-      const extract = (label) => {
-        const regex = new RegExp(label + `.*?<span.*?>(.*?)</span>`, "i");
-        const match = html.match(regex);
-        return match ? parseFloat(match[1].replace(/,/g, "")) : null;
-      };
-    
-      roe = extract("ROE");
-      debt = extract("Debt to equity");
-    
-    } catch {}
+     // ---- TRY SCREENER (IMPROVED PARSER) ----
+try {
+  const scrRes = await fetch(
+    `https://www.screener.in/company/${symbol.replace(".NS","")}/consolidated/`,
+    { headers: { "User-Agent": "Mozilla/5.0" } }
+  );
+
+  const html = await scrRes.text();
+
+  // Extract ratios block
+  const ratioSection = html.match(/<ul class="ranges">(.*?)<\/ul>/s);
+
+  if (ratioSection) {
+    const section = ratioSection[1];
+
+    const extract = (label) => {
+      const regex = new RegExp(label + `.*?<span.*?>(.*?)</span>`, "i");
+      const match = section.match(regex);
+      return match ? parseFloat(match[1].replace(/,/g, "")) : null;
+    };
+
+    pe = extract("P/E");
+    roe = extract("ROE");
+    debt = extract("Debt to equity");
+  }
+
+} catch (err) {
+  console.log("Screener parsing failed");
+}
 
     // ===== 3. RULE ENGINE =====
     let score = 0;
