@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Portfolio</title>
+</head>
+
+<body>
+
+<h2>📊 Portfolio Manager</h2>
+
+<input id="stock" placeholder="Add stock">
+<button onclick="add()">Add</button>
+
+<div id="list"></div>
+
+<script>
+
+let portfolio = JSON.parse(localStorage.getItem("p")) || [];
+
+function save() {
+  localStorage.setItem("p", JSON.stringify(portfolio));
+}
+
+async function load() {
+  let html = "";
+
+  for (let s of portfolio) {
+    let stock = await fetch("/api/stock?symbol=" + s).then(r => r.json());
+
+    let evalRes = await fetch(`/api/evaluate?price=${stock.price}&change=${stock.change}`)
+      .then(r => r.json());
+
+    let suggestion = "HOLD";
+    if (evalRes.decision === "BUY") suggestion = "ADD MORE";
+    if (evalRes.decision === "AVOID") suggestion = "SELL";
+
+    html += `
+      <div>
+        <b>${s}</b><br>
+        Price: ₹${stock.price}<br>
+        Suggestion: ${suggestion}<br><br>
+      </div>
+    `;
+  }
+
+  document.getElementById("list").innerHTML = html;
+}
+
+function add() {
+  let s = document.getElementById("stock").value;
+  portfolio.push(s);
+  save();
+  load();
+}
+
+load();
+
+</script>
+
+</body>
+</html>
