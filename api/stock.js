@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   const symbol = req.query.symbol;
-
+  const volume = result.meta.regularMarketVolume || 0;
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
     const response = await fetch(url, {
@@ -18,10 +18,11 @@ export default async function handler(req, res) {
     const prevClose = result.meta.previousClose;
     const change = ((price - prevClose) / prevClose) * 100;
 
-    res.status(200).json({
+       res.status(200).json({
       symbol,
       price,
-      change
+      change,
+      volume
     });
 
   } catch (err) {
