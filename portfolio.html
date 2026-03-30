@@ -2,43 +2,70 @@
 <html>
 <head>
   <title>Portfolio</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button { padding: 8px; margin: 5px; }
+    .card { border: 1px solid #ddd; padding: 10px; margin-top: 10px; }
+  </style>
 </head>
 
 <body>
 
-<h2>📊 Portfolio Manager</h2>
+<h2>📊 My Portfolio</h2>
 
-<input id="stock" placeholder="Add stock">
-<button onclick="add()">Add</button>
+<input id="symbol" placeholder="RELIANCE.NS">
+<input id="buyPrice" placeholder="Buy Price">
+<button onclick="addStock()">Add</button>
 
 <div id="list"></div>
 
 <script>
 
-let portfolio = JSON.parse(localStorage.getItem("p")) || [];
+let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
 
 function save() {
-  localStorage.setItem("p", JSON.stringify(portfolio));
+  localStorage.setItem("portfolio", JSON.stringify(portfolio));
 }
 
-async function load() {
+async function fetchData(symbol) {
+  let res = await fetch("/api/analyze?symbol=" + symbol);
+  return await res.json();
+}
+
+function addStock() {
+  let symbol = document.getElementById("symbol").value;
+  let buyPrice = parseFloat(document.getElementById("buyPrice").value);
+
+  portfolio.push({ symbol, buyPrice });
+  save();
+  render();
+}
+
+async function render() {
   let html = "";
 
   for (let s of portfolio) {
-    let stock = await fetch("/api/stock?symbol=" + s).then(r => r.json());
+    let data = await fetchData(s.symbol);
 
-    let evalRes = await fetch(`/api/evaluate?price=${stock.price}&change=${stock.change}`)
-      .then(r => r.json());
+    let pnl = ((data.price - s.buyPrice) / s.buyPrice) * 100;
 
-    let suggestion = "HOLD";
-    if (evalRes.decision === "BUY") suggestion = "ADD MORE";
-    if (evalRes.decision === "AVOID") suggestion = "SELL";
+    let action = "HOLD";
+
+    if (data.decision === "BUY") action = "ADD MORE";
+    if (data.decision === "SELL") action = "EXIT";
 
     html += `
-      <div>
-        <b>${s}</b><br>
-        Price: ₹${stock.price}<br>
-        Suggestion: ${suggestion}<br><br>
+      <div class="card">
+        <h3>${s.symbol}</h3>
+
+        Buy Price: ₹${s.buyPrice}<br>
+        Current Price: ₹${data.price}<br>
+        P/L: ${pnl.toFixed(2)}%<br><br>
+
+        Decision: ${data.decision}<br>
+        Action: <b>${action}</b><br>
+
+        Reasons: ${data.reasons.join(", ")}
       </div>
     `;
   }
@@ -46,14 +73,7 @@ async function load() {
   document.getElementById("list").innerHTML = html;
 }
 
-function add() {
-  let s = document.getElementById("stock").value;
-  portfolio.push(s);
-  save();
-  load();
-}
-
-load();
+render();
 
 </script>
 
