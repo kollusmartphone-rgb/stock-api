@@ -88,49 +88,73 @@ try {
 
     
     // ===== 3. RULE ENGINE =====
-    let score = 0;
+     let score = 0;
     let reasons = [];
     let confidence = 0;
-
-    // Fundamentals
+    
+    // ===== FUNDAMENTALS =====
+    
+    // PE
     if (pe !== null) {
       confidence++;
-      if (pe < 25) {
+      if (pe > 0 && pe < 25) {
         score++;
         reasons.push("Good PE");
       } else {
         reasons.push("High PE");
       }
     }
-
-    // Volume
+    
+    // ROE
+    if (roe !== null) {
+      confidence++;
+      if (roe > 15) {
+        score++;
+        reasons.push("Strong ROE");
+      } else {
+        reasons.push("Weak ROE");
+      }
+    }
+    
+    // Debt
+    if (debt !== null) {
+      confidence++;
+      if (debt < 0.5) {
+        score++;
+        reasons.push("Low Debt");
+      } else {
+        reasons.push("High Debt");
+      }
+    }
+    
+    // ===== VOLUME =====
     if (volume > 1000000) {
       score++;
-      reasons.push("High volume");
+      reasons.push("High Volume");
     }
-
-    // Momentum
+    
+    // ===== MOMENTUM =====
     if (change > 1) {
       score++;
-      reasons.push("Positive momentum");
+      reasons.push("Positive Momentum");
     }
-
+    
     if (change < -3) {
-      reasons.push("Heavy selling");
+      reasons.push("Heavy Selling");
     }
-
-    // ===== DECISION =====
+    
+    // ===== FINAL DECISION =====
     let decision = "HOLD";
-
-    if (confidence === 0) {
+    
+    if (confidence < 2) {
       decision = "LIMITED DATA";
-    } else if (score >= 3) {
+    } else if (score >= 5) {
       decision = "BUY";
-    } else if (score <= 1) {
+    } else if (score <= 2) {
       decision = "SELL";
     }
 
-    res.status(200).json({
+   res.status(200).json({
       symbol,
       price,
       change: change.toFixed(2),
