@@ -88,18 +88,18 @@ try {
 
     
     // ===== 3. RULE ENGINE =====
-     let score = 0;
+
     let reasons = [];
-    let confidence = 0;
+    let decision = "HOLD";
     
-    // ===== FUNDAMENTALS =====
+    // ===== 1. FUNDAMENTALS =====
+    let fundamentalsScore = 0;
     
     // PE
     if (pe !== null) {
-      confidence++;
       if (pe > 0 && pe < 25) {
-        score++;
-        reasons.push("Good PE");
+        fundamentalsScore++;
+        reasons.push("Good valuation (PE)");
       } else {
         reasons.push("High PE");
       }
@@ -107,9 +107,8 @@ try {
     
     // ROE
     if (roe !== null) {
-      confidence++;
       if (roe > 15) {
-        score++;
+        fundamentalsScore++;
         reasons.push("Strong ROE");
       } else {
         reasons.push("Weak ROE");
@@ -118,53 +117,79 @@ try {
     
     // Debt
     if (debt !== null) {
-      confidence++;
       if (debt < 0.5) {
-        score++;
-        reasons.push("Low Debt");
+        fundamentalsScore++;
+        reasons.push("Low debt");
       } else {
-        reasons.push("High Debt");
+        reasons.push("High debt");
       }
     }
     
-    // ===== VOLUME =====
+    // ===== 2. LIQUIDITY =====
+    let liquidityGood = false;
+    
     if (volume > 1000000) {
-      score++;
-      reasons.push("High Volume");
+      liquidityGood = true;
+      reasons.push("Good liquidity");
+    } else {
+      reasons.push("Low liquidity");
     }
     
-    // ===== MOMENTUM =====
-    if (change > 1) {
-      score++;
-      reasons.push("Positive Momentum");
+    // ===== 3. PRICE ACTION =====
+    let isDip = change < -2;
+    let strongUptrend = change > 2;
+    
+    // ===== 4. EXIT STRATEGY =====
+    
+    // Weak fundamentals → exit
+    if (fundamentalsScore <= 1) {
+      if (change < -2) {
+        decision = "SELL";
+        reasons.push("Weak fundamentals + falling price");
+      } else {
+        decision = "EXIT ON RISE";
+        reasons.push("Weak fundamentals");
+      }
     }
     
-    if (change < -3) {
-      reasons.push("Heavy Selling");
+    // Strong fundamentals → hold or buy
+    else if (fundamentalsScore >= 2) {
+    
+      if (isDip) {
+        decision = "BUY";
+        reasons.push("Strong stock at discount (dip)");
+      }
+    
+      else if (strongUptrend) {
+        decision = "HOLD";
+        reasons.push("Strong momentum, hold");
+      }
+    
+      else {
+        decision = "HOLD";
+        reasons.push("Stable strong stock");
+      }
     }
     
-    // ===== FINAL DECISION =====
-    let decision = "HOLD";
-    
-    if (confidence < 2) {
-      decision = "LIMITED DATA";
-    } else if (score >= 5) {
-      decision = "BUY";
-    } else if (score <= 2) {
-      decision = "SELL";
+    // ===== SAFETY =====
+    if (!liquidityGood) {
+      reasons.push("Low liquidity caution");
     }
-
-   res.status(200).json({
+    
+    return res.status(200).json({
       symbol,
       price,
       change: change.toFixed(2),
       volume,
       pe,
-      score,
+      roe,
+      debt,
+      fundamentalsScore,
       decision,
-      reasons,
-      confidence
+      reasons
     });
+     
+    
 
   } catch (err) {
     res.status(500).json({
