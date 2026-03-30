@@ -60,9 +60,9 @@ try {
       );
     
       const html = await scrRes.text();
-      console.log("Screener HTML length:", html.length);
-      // DEBUG (optional - remove later)
-      console.log(html.substring(0, 500));
+ 
+       console.log("HTML LENGTH:", html.length);
+       console.log("HTML START:", html.substring(0, 200));
     
       const extract = (label) => {
         const regex = new RegExp(
