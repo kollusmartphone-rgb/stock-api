@@ -60,7 +60,7 @@ try {
       );
     
       const html = await scrRes.text();
-    
+      console.log("Screener HTML length:", html.length);
       // DEBUG (optional - remove later)
       console.log(html.substring(0, 500));
     
