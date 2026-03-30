@@ -46,7 +46,8 @@ try {
 
     console.log("BEFORE SCREENER CALL");
     // ===== SCREENER FETCH (IMPROVED) =====
-    try {
+
+        try {
       const cleanSymbol = symbol.replace(".NS", "");
     
       const scrRes = await fetch(
@@ -62,26 +63,18 @@ try {
       );
     
       const html = await scrRes.text();
-     console.log("AFTER SCREENER FETCH");
-       console.log("HTML LENGTH:", html.length);
-       console.log("HTML START:", html.substring(0, 200));
     
-       const extract = (label) => {
+      const extract = (label) => {
         const regex = new RegExp(
           `<li[^>]*>\\s*<span[^>]*>${label}<\/span>\\s*<span[^>]*>(.*?)<\/span>`,
           "i"
         );
-      
+    
         const match = html.match(regex);
-      
+    
         return match
           ? parseFloat(match[1].replace(/,/g, ""))
           : null;
-      };
-      
-        
-        const match = html.match(regex);
-        return match ? parseFloat(match[1].replace(/,/g, "")) : null;
       };
     
       pe = extract("Stock P/E");
@@ -91,7 +84,9 @@ try {
     } catch (err) {
       console.log("Screener failed");
     }
-        
+
+
+    
     // ===== 3. RULE ENGINE =====
     let score = 0;
     let reasons = [];
