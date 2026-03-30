@@ -64,12 +64,12 @@ try {
     
       const html = await scrRes.text();
     
-      const extract = (label) => {
+        const extract = (label) => {
         const regex = new RegExp(
-          `<li[^>]*>\\s*<span[^>]*>${label}<\/span>\\s*<span[^>]*>(.*?)<\/span>`,
+          `${label}[\\s\\S]*?<span[^>]*>([0-9.,-]+)<`,
           "i"
         );
-    
+          
         const match = html.match(regex);
     
         return match
