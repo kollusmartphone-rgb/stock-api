@@ -96,8 +96,7 @@ async function render() {
 
     let suggestion = "HOLD";
 
-    if (data.decision === "BUY") suggestion = "ADD MORE";
-    if (data.decision === "SELL") suggestion = "SELL";
+    let suggestion = data.decision;
 
     html += `
       <tr>
