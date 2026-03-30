@@ -43,36 +43,44 @@ try {
   console.log("FMP failed");
 }
     
-     // ---- TRY SCREENER (IMPROVED PARSER) ----
-try {
-  const scrRes = await fetch(
-    `https://www.screener.in/company/${symbol.replace(".NS","")}/consolidated/`,
-    { headers: { "User-Agent": "Mozilla/5.0" } }
-  );
-
-  const html = await scrRes.text();
-
-  // Extract ratios block
-  const ratioSection = html.match(/<ul class="ranges">(.*?)<\/ul>/s);
-
-  if (ratioSection) {
-    const section = ratioSection[1];
-
-    const extract = (label) => {
-      const regex = new RegExp(label + `.*?<span.*?>(.*?)</span>`, "i");
-      const match = section.match(regex);
-      return match ? parseFloat(match[1].replace(/,/g, "")) : null;
-    };
-
-    pe = extract("P/E");
-    roe = extract("ROE");
-    debt = extract("Debt to equity");
-  }
-
-} catch (err) {
-  console.log("Screener parsing failed");
-}
-
+    // ===== SCREENER FETCH (IMPROVED) =====
+    try {
+      const cleanSymbol = symbol.replace(".NS", "");
+    
+      const scrRes = await fetch(
+        `https://www.screener.in/company/${cleanSymbol}/consolidated/`,
+        {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html",
+            "Referer": "https://www.google.com/"
+          }
+        }
+      );
+    
+      const html = await scrRes.text();
+    
+      // DEBUG (optional - remove later)
+      console.log(html.substring(0, 500));
+    
+      const extract = (label) => {
+        const regex = new RegExp(
+          `<span[^>]*>${label}<\/span>\\s*<span[^>]*>(.*?)<\/span>`,
+          "i"
+        );
+        const match = html.match(regex);
+        return match ? parseFloat(match[1].replace(/,/g, "")) : null;
+      };
+    
+      pe = extract("Stock P/E");
+      roe = extract("ROE");
+      debt = extract("Debt to equity");
+    
+    } catch (err) {
+      console.log("Screener failed");
+    }
+        
     // ===== 3. RULE ENGINE =====
     let score = 0;
     let reasons = [];
