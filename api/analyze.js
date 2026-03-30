@@ -1,3 +1,4 @@
+console.log("API HIT START");
 export default async function handler(req, res) {
   const symbol = req.query.symbol;
 
@@ -42,7 +43,8 @@ try {
 } catch (err) {
   console.log("FMP failed");
 }
-    
+
+    console.log("BEFORE SCREENER CALL");
     // ===== SCREENER FETCH (IMPROVED) =====
     try {
       const cleanSymbol = symbol.replace(".NS", "");
@@ -60,7 +62,7 @@ try {
       );
     
       const html = await scrRes.text();
- 
+     console.log("AFTER SCREENER FETCH");
        console.log("HTML LENGTH:", html.length);
        console.log("HTML START:", html.substring(0, 200));
     
