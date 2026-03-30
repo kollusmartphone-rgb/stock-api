@@ -66,11 +66,20 @@ try {
        console.log("HTML LENGTH:", html.length);
        console.log("HTML START:", html.substring(0, 200));
     
-      const extract = (label) => {
+       const extract = (label) => {
         const regex = new RegExp(
-          `<span[^>]*>${label}<\/span>\\s*<span[^>]*>(.*?)<\/span>`,
+          `<li[^>]*>\\s*<span[^>]*>${label}<\/span>\\s*<span[^>]*>(.*?)<\/span>`,
           "i"
         );
+      
+        const match = html.match(regex);
+      
+        return match
+          ? parseFloat(match[1].replace(/,/g, ""))
+          : null;
+      };
+      
+        
         const match = html.match(regex);
         return match ? parseFloat(match[1].replace(/,/g, "")) : null;
       };
