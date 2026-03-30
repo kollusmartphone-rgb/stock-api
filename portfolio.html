@@ -1,23 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Portfolio</title>
+  <title>📊 Portfolio Dashboard</title>
+
   <style>
-    body { font-family: Arial; padding: 20px; }
+    body { font-family: Arial; padding: 20px; background: #f4f6f8; }
     input, button { padding: 8px; margin: 5px; }
-    .card { border: 1px solid #ddd; padding: 10px; margin-top: 10px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th { background: #007bff; color: white; }
+    .profit { color: green; }
+    .loss { color: red; }
   </style>
 </head>
 
 <body>
 
-<h2>📊 My Portfolio</h2>
+<h2>📊 Portfolio Dashboard</h2>
 
-<input id="symbol" placeholder="RELIANCE.NS">
+<!-- INPUT SECTION -->
+<input id="symbol" placeholder="Stock (RELIANCE.NS)">
 <input id="buyPrice" placeholder="Buy Price">
+<input id="qty" placeholder="Quantity">
+<input id="date" type="date">
+
 <button onclick="addStock()">Add</button>
 
-<div id="list"></div>
+<!-- TABLE -->
+<table>
+  <thead>
+    <tr>
+      <th>Stock</th>
+      <th>Buy Price</th>
+      <th>Qty</th>
+      <th>Date</th>
+      <th>Current Price</th>
+      <th>Current Value</th>
+      <th>% Change</th>
+      <th>P/L</th>
+      <th>Suggestion</th>
+    </tr>
+  </thead>
+
+  <tbody id="tableBody"></tbody>
+</table>
 
 <script>
 
@@ -33,10 +68,14 @@ async function fetchData(symbol) {
 }
 
 function addStock() {
-  let symbol = document.getElementById("symbol").value;
-  let buyPrice = parseFloat(document.getElementById("buyPrice").value);
+  let stock = {
+    symbol: document.getElementById("symbol").value,
+    buyPrice: parseFloat(document.getElementById("buyPrice").value),
+    qty: parseFloat(document.getElementById("qty").value),
+    date: document.getElementById("date").value
+  };
 
-  portfolio.push({ symbol, buyPrice });
+  portfolio.push(stock);
   save();
   render();
 }
@@ -45,32 +84,37 @@ async function render() {
   let html = "";
 
   for (let s of portfolio) {
+
     let data = await fetchData(s.symbol);
 
-    let pnl = ((data.price - s.buyPrice) / s.buyPrice) * 100;
+    let currentValue = data.price * s.qty;
+    let invested = s.buyPrice * s.qty;
+    let profit = currentValue - invested;
+    let percent = ((data.price - s.buyPrice) / s.buyPrice) * 100;
 
-    let action = "HOLD";
+    let cls = profit >= 0 ? "profit" : "loss";
 
-    if (data.decision === "BUY") action = "ADD MORE";
-    if (data.decision === "SELL") action = "EXIT";
+    let suggestion = "HOLD";
+
+    if (data.decision === "BUY") suggestion = "ADD MORE";
+    if (data.decision === "SELL") suggestion = "SELL";
 
     html += `
-      <div class="card">
-        <h3>${s.symbol}</h3>
-
-        Buy Price: ₹${s.buyPrice}<br>
-        Current Price: ₹${data.price}<br>
-        P/L: ${pnl.toFixed(2)}%<br><br>
-
-        Decision: ${data.decision}<br>
-        Action: <b>${action}</b><br>
-
-        Reasons: ${data.reasons.join(", ")}
-      </div>
+      <tr>
+        <td>${s.symbol}</td>
+        <td>₹${s.buyPrice}</td>
+        <td>${s.qty}</td>
+        <td>${s.date}</td>
+        <td>₹${data.price}</td>
+        <td>₹${currentValue.toFixed(2)}</td>
+        <td class="${cls}">${percent.toFixed(2)}%</td>
+        <td class="${cls}">₹${profit.toFixed(2)}</td>
+        <td><b>${suggestion}</b></td>
+      </tr>
     `;
   }
 
-  document.getElementById("list").innerHTML = html;
+  document.getElementById("tableBody").innerHTML = html;
 }
 
 render();
